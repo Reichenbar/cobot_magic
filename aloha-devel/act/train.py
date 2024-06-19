@@ -96,7 +96,7 @@ def train(args):
 
     config = {
         'num_epochs': args.num_epochs,
-        'ckpt_dir': args.ckpt_dir,
+        'ckpt_dir': os.path.join(args.ckpt_dir, args.task_name),
         'policy_class': args.policy_class,
         'policy_config': policy_config,
         'seed': args.seed,
@@ -272,8 +272,8 @@ def plot_history(train_history, validation_history, num_epochs, ckpt_dir, seed):
 
 def get_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset_dir', action='store', type=str, help='dataset_dir', default='./dataset', required=True)
-    parser.add_argument('--ckpt_dir', action='store', type=str, help='ckpt_dir', required=True)
+    parser.add_argument('--dataset_dir', action='store', type=str, help='dataset_dir', default='../../collect_data/data', required=False)
+    parser.add_argument('--ckpt_dir', action='store', type=str, help='ckpt_dir', default='./model', required=False)
     parser.add_argument('--num_episodes', action='store', type=int, help='num_episodes', required=True)
    
     parser.add_argument('--pretrain_ckpt', action='store', type=str, help='pretrain_ckpt', default='', required=False)

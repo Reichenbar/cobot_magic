@@ -50,21 +50,22 @@ def load_hdf5(dataset_dir, dataset_name):
     return qpos, qvel, effort, action, base_action, image_dict
 
 def main(args):
-    dataset_dir = args['dataset_dir']
+    dataset_dir = os.path.join(args['dataset_dir'], task_name)
     episode_idx = args['episode_idx']
     task_name   = args['task_name']
     dataset_name = f'episode_{episode_idx}'
 
-    qpos, qvel, effort, action, base_action, image_dict = load_hdf5(os.path.join(dataset_dir, task_name), dataset_name)
+    qpos, qvel, effort, action, base_action, image_dict = load_hdf5(dataset_dir, dataset_name)
     
     print('hdf5 loaded!!')
     
-    save_videos(image_dict, action, DT,  video_path=os.path.join(dataset_dir, dataset_name + '_video.mp4'))
-   
+    vis_dir = os.path.join(dataset_dir, "visualization")
+    if not os.path.exists(vis_dir):
+        os.makedirs(vis_dir)
 
-
-    visualize_joints(qpos, action, plot_path=os.path.join(dataset_dir, dataset_name + '_qpos.png'))
-    visualize_base(base_action, plot_path=os.path.join(dataset_dir, dataset_name + '_base_action.png'))
+    save_videos(image_dict, action, DT,  video_path=os.path.join(vis_dir, dataset_name + '_video.mp4'))
+    visualize_joints(qpos, action, plot_path=os.path.join(vis_dir, dataset_name + '_qpos.png'))
+    visualize_base(base_action, plot_path=os.path.join(vis_dir, dataset_name + '_base_action.png'))
 
 def save_videos(video, actions, dt, video_path=None):
     cam_names = list(video.keys())
@@ -151,9 +152,9 @@ def visualize_base(readings, plot_path=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset_dir', action='store', type=str, help='Dataset dir.', required=True)
-    parser.add_argument('--task_name', action='store', type=str, help='Task name.',
-                        default="aloha_mobile_dummy", required=False)
-    parser.add_argument('--episode_idx', action='store', type=int, help='Episode index.',default=0, required=False)
+    parser.add_argument('--dataset_dir', action='store', type=str, help='Dataset_dir.',
+                        default="./data", required=False)
+    parser.add_argument('--task_name', action='store', type=str, help='Task name.', required=True)
+    parser.add_argument('--episode_idx', action='store', type=int, help='Episode index.', required=True)
     
     main(vars(parser.parse_args()))

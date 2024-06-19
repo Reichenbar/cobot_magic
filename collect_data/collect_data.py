@@ -381,10 +381,8 @@ def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset_dir', action='store', type=str, help='Dataset_dir.',
                         default="./data", required=False)
-    parser.add_argument('--task_name', action='store', type=str, help='Task name.',
-                        default="aloha_mobile_dummy", required=False)
-    parser.add_argument('--episode_idx', action='store', type=int, help='Episode index.',
-                        default=0, required=False)
+    parser.add_argument('--task_name', action='store', type=str, help='Task name.', required=True)
+    parser.add_argument('--episode_idx', action='store', type=int, help='Episode index.', required=True)
     
     parser.add_argument('--max_timesteps', action='store', type=int, help='Max_timesteps.',
                         default=500, required=False)
