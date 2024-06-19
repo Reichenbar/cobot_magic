@@ -50,7 +50,7 @@ def load_hdf5(dataset_dir, dataset_name):
     return qpos, qvel, effort, action, base_action, image_dict
 
 def main(args):
-    dataset_dir = os.path.join(args['dataset_dir'], task_name)
+    dataset_dir = os.path.join(args['dataset_dir'], args['task_name'])
     episode_idx = args['episode_idx']
     task_name   = args['task_name']
     dataset_name = f'episode_{episode_idx}'
