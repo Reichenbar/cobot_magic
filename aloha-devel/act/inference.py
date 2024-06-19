@@ -137,7 +137,7 @@ def get_model_config(args):
         raise NotImplementedError
 
     config = {
-        'ckpt_dir': args.ckpt_dir,
+        'ckpt_dir': os.path.join(args.ckpt_dir, args.task_name),
         'ckpt_name': args.ckpt_name,
         'ckpt_stats_name': args.ckpt_stats_name,
         'episode_len': args.max_publish_step,
@@ -670,8 +670,8 @@ class RosOperator:
 
 def get_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--ckpt_dir', action='store', type=str, help='ckpt_dir', required=True)
-    parser.add_argument('--task_name', action='store', type=str, help='task_name', default='aloha_mobile_dummy', required=False)
+    parser.add_argument('--ckpt_dir', action='store', type=str, help='ckpt_dir', default='./model', required=False)
+    parser.add_argument('--task_name', action='store', type=str, help='task_name', required=True)
     parser.add_argument('--max_publish_step', action='store', type=int, help='max_publish_step', default=10000, required=False)
     parser.add_argument('--ckpt_name', action='store', type=str, help='ckpt_name', default='policy_best.ckpt', required=False)
     parser.add_argument('--ckpt_stats_name', action='store', type=str, help='ckpt_stats_name', default='dataset_stats.pkl', required=False)

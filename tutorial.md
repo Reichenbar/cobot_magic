@@ -12,3 +12,8 @@ python visualize_episodes.py --task_name pick_little_bear --episode_idx 0
 `
 python act/train.py --task_name pick_little_bear --batch_size 4 --num_epochs 3000 --num_episodes 50
 `
+
+# Inference
+`
+python act/inference.py --task_name pick_little_bear
+`

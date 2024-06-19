@@ -1,5 +1,5 @@
 # 主机密码
-export password=agx
+export password=103
 
 # camera_serial_number相机序列号
 export camera00_serial_num=AU1231201GE

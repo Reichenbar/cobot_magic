@@ -1,7 +1,7 @@
 #!/bin/bash
 source ~/.bashrc
 workspace=$(pwd)
-password=agx
+password=103
 # workdir=$(cd $(dirname $0); pwd)
 
 
