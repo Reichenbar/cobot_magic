@@ -8,7 +8,7 @@ password=103
 
 
 # 2 启动roscore
-gnome-terminal -t "roscore" -- bash -c "roscore;exec bash;"
+# gnome-terminal -t "roscore" -- bash -c "roscore;exec bash;"
 sleep 2
 
 
