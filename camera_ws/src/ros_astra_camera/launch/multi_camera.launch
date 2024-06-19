@@ -12,9 +12,9 @@
     <!-- 相机序列号 -->
     
 
-    <arg name="camera1_serila_number" default="AU1231201GE"/>
-    <arg name="camera2_serila_number" default="AU1P32201SA"/>
-    <arg name="camera3_serila_number" default="AU1953304F2"/> 
+    <arg name="camera1_serila_number" default="AU1SB3300PT"/>
+    <arg name="camera2_serila_number" default="AU1SB3300DK"/>
+    <arg name="camera3_serila_number" default="AU1SB3300PF"/> 
 
     <!-- <arg name="camera1_serila_number" default="$(env camera00_serial_num)"/>
     <arg name="camera2_serila_number" default="$(env camera01_serial_num)"/>
