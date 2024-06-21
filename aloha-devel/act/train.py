@@ -109,9 +109,9 @@ def train(args):
                                                            args.batch_size, args.batch_size)
 
     # save dataset stats
-    if not os.path.isdir(args.ckpt_dir):
-        os.makedirs(args.ckpt_dir)
-    stats_path = os.path.join(args.ckpt_dir, args.ckpt_stats_name)
+    if not os.path.isdir(config['ckpt_dir']):
+        os.makedirs(config['ckpt_dir'])
+    stats_path = os.path.join(config['ckpt_dir'], args.ckpt_stats_name)
     with open(stats_path, 'wb') as f:
         pickle.dump(stats, f)
 
@@ -119,7 +119,7 @@ def train(args):
     best_epoch, min_val_loss, best_state_dict = best_ckpt_info
 
     # save best checkpoint
-    ckpt_path = os.path.join(args.ckpt_dir, args.ckpt_name)
+    ckpt_path = os.path.join(config['ckpt_dir'], args.ckpt_name)
     torch.save(best_state_dict, ckpt_path)
     print(f'Best ckpt, val loss {min_val_loss:.6f} @ epoch{best_epoch}')
 
@@ -272,7 +272,7 @@ def plot_history(train_history, validation_history, num_epochs, ckpt_dir, seed):
 
 def get_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset_dir', action='store', type=str, help='dataset_dir', default='../../collect_data/data', required=False)
+    parser.add_argument('--dataset_dir', action='store', type=str, help='dataset_dir', default='../collect_data/data', required=False)
     parser.add_argument('--ckpt_dir', action='store', type=str, help='ckpt_dir', default='./model', required=False)
     parser.add_argument('--num_episodes', action='store', type=int, help='num_episodes', required=True)
    

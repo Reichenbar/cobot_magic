@@ -98,7 +98,7 @@ def main(args):
             new_actions = np.linspace(last_action, action, 20) # 插值
             last_action = action
             for act in new_actions:
-                print(np.round(act[:7], 4))
+                print("master arm action", "left: ", np.round(act[:7], 4), " right: ", np.round(act[7:], 4))
                 cur_timestamp = rospy.Time.now()  # 设置时间戳
                 joint_state_msg.header.stamp = cur_timestamp 
                 
@@ -115,7 +115,7 @@ def main(args):
     else:
         i = 0
         while(not rospy.is_shutdown() and i < len(actions)):
-            print("left: ", np.round(qposs[i][:7], 4), " right: ", np.round(qposs[i][7:], 4))
+            print("puppet arm state", "left: ", np.round(qposs[i][:7], 4), " right: ", np.round(qposs[i][7:], 4))
             
             cam_names = [k for k in image_dicts.keys()]
             image0 = image_dicts[cam_names[0]][i] 
@@ -158,9 +158,9 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset_dir', action='store', type=str, help='Dataset dir.', required=True)
-    parser.add_argument('--task_name', action='store', type=str, help='Task name.',
-                        default="aloha_mobile_dummy", required=False)
+    parser.add_argument('--dataset_dir', action='store', type=str, help='Dataset_dir.',
+                        default="./data", required=False)
+    parser.add_argument('--task_name', action='store', type=str, help='Task name.', required=True)
 
     parser.add_argument('--episode_idx', action='store', type=int, help='Episode index.',default=0, required=False)
     
@@ -198,4 +198,3 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     main(args)
-    # python collect_data.py --max_timesteps 500 --is_compress --episode_idx 0 

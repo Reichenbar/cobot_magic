@@ -92,7 +92,7 @@ def visualize_joints(qpos_list, command_list, plot_path=None, ylim=None, label_o
     if label_overwrite:
         label1, label2 = label_overwrite
     else:
-        label1, label2 = 'State', 'Command'
+        label1, label2 = 'Observation (puppet)', 'Action (master)'
 
     qpos = np.array(qpos_list) # ts, dim
     command = np.array(command_list)
@@ -111,10 +111,10 @@ def visualize_joints(qpos_list, command_list, plot_path=None, ylim=None, label_o
         ax.legend()
 
     # plot arm command
-    # for dim_idx in range(num_dim):
-    #     ax = axs[dim_idx]
-    #     ax.plot(command[:, dim_idx], label=label2)
-    #     ax.legend()
+    for dim_idx in range(num_dim):
+        ax = axs[dim_idx]
+        ax.plot(command[:, dim_idx], label=label2)
+        ax.legend()
 
     if ylim:
         for dim_idx in range(num_dim):
