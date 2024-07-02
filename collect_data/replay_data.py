@@ -130,11 +130,13 @@ def main(args):
             cur_timestamp = rospy.Time.now()  # 设置时间戳
             
             joint_state_msg.header.stamp = cur_timestamp 
-            joint_state_msg.position = actions[i][:7]
-            master_arm_left_publisher.publish(joint_state_msg)
 
-            joint_state_msg.position = actions[i][7:]
-            master_arm_right_publisher.publish(joint_state_msg)
+            if not args.simulation:
+                joint_state_msg.position = actions[i][:7]
+                master_arm_left_publisher.publish(joint_state_msg)
+
+                joint_state_msg.position = actions[i][7:]
+                master_arm_right_publisher.publish(joint_state_msg)
 
             joint_state_msg.position = qposs[i][:7]
             puppet_arm_left_publisher.publish(joint_state_msg)
@@ -193,6 +195,7 @@ if __name__ == '__main__':
                         default=30, required=False)
     
     parser.add_argument('--only_pub_master', action='store_true', help='only_pub_master',required=False)
+    parser.add_argument('--simulation', action='store_true', help='publish images and puppet states for simulation',required=False)
     
     
 

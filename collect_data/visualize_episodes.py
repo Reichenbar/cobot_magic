@@ -110,7 +110,9 @@ def visualize_joints(qpos_list, command_list, plot_path=None, ylim=None, label_o
         ax.set_title(f'Joint {dim_idx}: {all_names[dim_idx]}')
         ax.legend()
 
-    # plot arm command
+    ## plot arm command
+    ## HACK: for gripper, the command (master) is 12 times the state (puppet)
+    # command[:, -1] = command[:, -1]/12
     for dim_idx in range(num_dim):
         ax = axs[dim_idx]
         ax.plot(command[:, dim_idx], label=label2)
