@@ -110,13 +110,13 @@ class DETRVAE(nn.Module):
 
         # Obtain latent z from action sequence
         if is_training and self.kl_weight != 0:  # hidden_dim输入参数是512
-            action_embed = self.encoder_action_proj(actions)  # (bs, seq, hidden_dim)
+            action_embed = self.encoder_action_proj(actions) # (bs, seq, hidden_dim)
             robot_state_embed = self.encoder_joint_proj(robot_state)  # (bs, hidden_dim)
             robot_state_embed = torch.unsqueeze(robot_state_embed, axis=1)  # (bs, 1, hidden_dim)
-            cls_embed = self.cls_embed.weight  # (1, hidden_dim)
-            cls_embed = torch.unsqueeze(cls_embed, axis=0).repeat(bs, 1, 1)  # (bs, 1, hidden_dim)
-            encoder_input = torch.cat([cls_embed, robot_state_embed, action_embed], axis=1)  # (bs, seq+1, hidden_dim)
-            encoder_input = encoder_input.permute(1, 0, 2)  # (seq+1, bs, hidden_dim)
+            cls_embed = self.cls_embed.weight # (1, hidden_dim)
+            cls_embed = torch.unsqueeze(cls_embed, axis=0).repeat(bs, 1, 1) # (bs, 1, hidden_dim)
+            encoder_input = torch.cat([cls_embed, robot_state_embed, action_embed], axis=1) # (bs, seq+1, hidden_dim)
+            encoder_input = encoder_input.permute(1, 0, 2) # (seq+1, bs, hidden_dim)
             cls_joint_is_pad = torch.full((bs, 2), False).to(robot_state.device)  # False: not a padding
             is_pad = torch.cat([cls_joint_is_pad, action_is_pad], axis=1)  # (bs, seq+1)
 
@@ -507,7 +507,7 @@ def build(args):
 
     encoder = None
     if args.kl_weight != 0:
-        encoder = build_encoder(args)          # 构建编码成和解码层
+        encoder = build_encoder(args)          # 构建编码和解码层
 
     model = DETRVAE(
         backbones,

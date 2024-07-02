@@ -95,7 +95,7 @@ class ACTPolicy(nn.Module):
         return self.optimizer
 
     def serialize(self):
-        return self.state_dict()
+        return self.state_dict() # all model parameters
 
     def deserialize(self, model_dict):
         return self.load_state_dict(model_dict)
