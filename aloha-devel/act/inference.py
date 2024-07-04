@@ -14,6 +14,7 @@ from einops import rearrange
 from utils import compute_dict_mean, set_seed, detach_dict # helper functions
 from policy import ACTPolicy, CNNMLPPolicy, DiffusionPolicy
 import collections
+# deque stands for double-ended queue, which supports fast append and pop operations from both the left and right ends
 from collections import deque
 
 import rospy
@@ -293,20 +294,22 @@ def model_inference(args, config, ros_operator, save_episode=True):
 
     # 数据预处理和后处理函数定义
     pre_process = lambda s_qpos: (s_qpos - stats['qpos_mean']) / stats['qpos_std']
-    post_process = lambda a: a * stats['qpos_std'] + stats['qpos_mean']
+    # post_process = lambda a: a * stats['qpos_std'] + stats['qpos_mean']
+    post_process = lambda a: a * stats['action_std'] + stats['action_mean'] # HACK: `/action` as actions
 
     max_publish_step = config['episode_len']
     chunk_size = config['policy_config']['chunk_size']
 
-    # 发布基础的姿态
+    # initial pose, set the last value as 3.557830810546875 to open grippers. The joint range for gripper is [0, 0.357].
     left0 = [-0.00133514404296875, 0.00209808349609375, 0.01583099365234375, -0.032616615295410156, -0.00286102294921875, 0.00095367431640625, 3.557830810546875]
     right0 = [-0.00133514404296875, 0.00438690185546875, 0.034523963928222656, -0.053597450256347656, -0.00476837158203125, -0.00209808349609375, 3.557830810546875]
-    left1 = [-0.00133514404296875, 0.00209808349609375, 0.01583099365234375, -0.032616615295410156, -0.00286102294921875, 0.00095367431640625, -0.3393220901489258]
-    right1 = [-0.00133514404296875, 0.00247955322265625, 0.01583099365234375, -0.032616615295410156, -0.00286102294921875, 0.00095367431640625, -0.3397035598754883]
+    left1 = [-0.00133514404296875, 0.00209808349609375, 0.01583099365234375, -0.032616615295410156, -0.00286102294921875, 0.00095367431640625, 0.0]
+    right1 = [-0.00133514404296875, 0.00438690185546875, 0.034523963928222656, -0.053597450256347656, -0.00476837158203125, -0.00209808349609375, 0.0]
     
     ros_operator.puppet_arm_publish_continuous(left0, right0)
-    input("Enter any key to continue :")
+    time.sleep(0.5)
     ros_operator.puppet_arm_publish_continuous(left1, right1)
+    input("Enter any key to begin the inference process.")
     action = None
     # 推理
     with torch.inference_mode():
@@ -357,6 +360,8 @@ def model_inference(args, config, ros_operator, save_episode=True):
                 left_action = action[:7]  # 取7维度
                 right_action = action[7:14]
                 ros_operator.puppet_arm_publish(left_action, right_action)  # puppet_arm_publish_continuous_thread
+                # ros_operator.puppet_arm_publish_continuous(left_action, right_action)  # puppet_arm_publish_continuous_thread
+                # ros_operator.puppet_arm_publish_linear(left_action, right_action)  # puppet_arm_publish_continuous_thread
                 if args.use_robot_base:
                     vel_action = action[14:16]
                     ros_operator.robot_base_publish(vel_action)
@@ -370,6 +375,10 @@ def model_inference(args, config, ros_operator, save_episode=True):
 
 
 class RosOperator:
+    """
+    Sub: subscribe state data and store in deque, use get_frame() to obtain the state at frame_time
+    TODO: interpolation of joint angles maybe not appropriate.
+    """
     def __init__(self, args):
         self.robot_base_deque = None
         self.puppet_arm_right_deque = None
@@ -427,14 +436,19 @@ class RosOperator:
         self.robot_base_publisher.publish(vel_msg)
 
     def puppet_arm_publish_continuous(self, left, right):
+        """
+        Limit the joint change with in the range of args.arm_steps_length
+        """
         rate = rospy.Rate(self.args.publish_rate)
         left_arm = None
         right_arm = None
         while True and not rospy.is_shutdown():
             if len(self.puppet_arm_left_deque) != 0:
                 left_arm = list(self.puppet_arm_left_deque[-1].position)
+                left_arm[-1] = left_arm[-1]*12 #HACK: for gripper, the command (master) is 12 times the state (puppet)
             if len(self.puppet_arm_right_deque) != 0:
                 right_arm = list(self.puppet_arm_right_deque[-1].position)
+                right_arm[-1] = right_arm[-1]*12 #HACK: for gripper, the command (master) is 12 times the state (puppet)
             if left_arm is None or right_arm is None:
                 rate.sleep()
                 continue
@@ -451,10 +465,10 @@ class RosOperator:
             right_diff = [abs(right[i] - right_arm[i]) for i in range(len(right))]
             flag = False
             for i in range(len(left)):
-                if left_diff[i] < self.args.arm_steps_length[i]:
+                if left_diff[i] < self.args.arm_steps_length[i]:# FIXME: inconsistent change between joints
                     left_arm[i] = left[i]
                 else:
-                    left_arm[i] += left_symbol[i] * self.args.arm_steps_length[i]
+                    left_arm[i] += left_symbol[i] * self.args.arm_steps_length[i] # limit the max joint change
                     flag = True
             for i in range(len(right)):
                 if right_diff[i] < self.args.arm_steps_length[i]:
@@ -475,7 +489,10 @@ class RosOperator:
             rate.sleep()
 
     def puppet_arm_publish_linear(self, left, right):
-        num_step = 100
+        """
+        Linear interpolation between current state and next inferred state
+        """
+        num_step = 300
         rate = rospy.Rate(200)
 
         left_arm = None
@@ -484,15 +501,17 @@ class RosOperator:
         while True and not rospy.is_shutdown():
             if len(self.puppet_arm_left_deque) != 0:
                 left_arm = list(self.puppet_arm_left_deque[-1].position)
+                left_arm[-1] = left_arm[-1]*12 #HACK: for gripper, the command (master) is 12 times the state (puppet)
             if len(self.puppet_arm_right_deque) != 0:
                 right_arm = list(self.puppet_arm_right_deque[-1].position)
+                right_arm[-1] = right_arm[-1]*12 #HACK: for gripper, the command (master) is 12 times the state (puppet)
             if left_arm is None or right_arm is None:
                 rate.sleep()
                 continue
             else:
                 break
 
-        traj_left_list = np.linspace(left_arm, left, num_step)
+        traj_left_list = np.linspace(left_arm, left, num_step) # FIXME: inconsistent change between joints
         traj_right_list = np.linspace(right_arm, right, num_step)
 
         for i in range(len(traj_left_list)):
@@ -548,7 +567,7 @@ class RosOperator:
         if self.args.use_robot_base and (len(self.robot_base_deque) == 0 or self.robot_base_deque[-1].header.stamp.to_sec() < frame_time):
             return False
 
-        while self.img_left_deque[0].header.stamp.to_sec() < frame_time:
+        while self.img_left_deque[0].header.stamp.to_sec() < frame_time: # obtain data at frame_time
             self.img_left_deque.popleft()
         img_left = self.bridge.imgmsg_to_cv2(self.img_left_deque.popleft(), 'passthrough')
 
@@ -690,7 +709,7 @@ def get_arguments():
     parser.add_argument('--kl_weight', action='store', type=int, help='KL Weight', default=10, required=False)
     parser.add_argument('--hidden_dim', action='store', type=int, help='hidden_dim', default=512, required=False)
     parser.add_argument('--dim_feedforward', action='store', type=int, help='dim_feedforward', default=3200, required=False)
-    parser.add_argument('--temporal_agg', action='store', type=bool, help='temporal_agg', default=True, required=False)
+    parser.add_argument('--temporal_agg', action='store_true', help='temporal_agg', required=False)
 
     parser.add_argument('--state_dim', action='store', type=int, help='state_dim', default=14, required=False)
     parser.add_argument('--lr_backbone', action='store', type=float, help='lr_backbone', default=1e-5, required=False)

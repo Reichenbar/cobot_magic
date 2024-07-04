@@ -1,6 +1,6 @@
 # Collect data
 ```
-python collect_data.py --task_name pick_little_bear --max_timesteps 500 --episode_idx 0
+python collect_data.py --task_name slide_ziploc --max_timesteps 750 --episode_idx 0
 ```
 
 * Observation topic: `/puppet/joint_left` and `/puppet/joint_right`
@@ -18,6 +18,7 @@ data_dict = {
 }
 ```
 * The data is typically stored in the shape of (num_steps, num_dims)
+* Typically, 30 time steps correspond 1 sec.
 
 # Visualize data
 ```
@@ -39,12 +40,12 @@ python replay_data.py --simulation --frame_rate 3 --task_name pick_little_bear -
 # Training
 NOTE: Check task name!!! Otherwise, the previous trained model maybe overwritten.
 ```
-python act/train.py --task_name pick_blue_clamp --batch_size 8 --num_epochs 9000 --num_episodes 50 --lr 1e-5
+python act/train.py --task_name slide_ziploc --batch_size 8 --num_epochs 6000 --num_episodes 50 --lr 1e-5
 ```
 
 # Inference
 ```
-python act/inference.py --task_name pick_blue_clamp
+python act/inference.py --task_name transfer_cube --temporal_agg
 ```
 
 # ACT Tuning Tips

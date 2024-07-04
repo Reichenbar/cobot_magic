@@ -92,7 +92,7 @@ def save_data(args, timesteps, actions, dataset_path):
         # data_dict write into h5py.File
         for name, array in data_dict.items():  
             root[name][...] = array
-    print(f'\033[32m\nSaving: {time.time() - t0:.1f} secs. %s \033[0m\n'%dataset_path)
+    print(f'\033[32m\nSaving: {time.time() - t0:.1f} secs. %s \033[0m\n'%dataset_path) # data saving time
 
 
 class RosOperator:

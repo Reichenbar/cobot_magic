@@ -139,7 +139,7 @@ void arx_arm::init_step()
             init_kp+= 1.0f; //1.0f
             if(init_kd< 12) 
             init_kd+=0.2f;  //0.2
-
+            // std::cout << motor_control_cmd << is_teach_mode << current_normal << std::endl; //001;
             solve.control2(target_pos,motor_control_cmd,is_teach_mode,current_normal);
 
 
@@ -330,7 +330,7 @@ void arx_arm::arm_torque_mode()
         if( (Teleop_Use()->buttons_[5] == 1 && !button5_pressed)  || ( arx5_cmd.key_i ==1 &&  !button5_pressed) )
         {
             button5_pressed = true;
-            if (!is_torque_control) 
+            if (!is_torque_control) // teleoperation
             {
                 init_kp=10,init_kp_4=20,init_kd=init_kd_4=init_kd_6=init_kp_4=0; 
                 is_teach_mode = true;
@@ -342,8 +342,8 @@ void arx_arm::arm_torque_mode()
             }else
             {   
                 is_teach_mode = false;
-                is_torque_control = false;
-                teach2pos_returning = true;
+                is_torque_control = false; // switch between teleoperation and torque control
+                teach2pos_returning = true; // gradually back to initial pose
                 for (int i = 0; i < 6; i++)
                 {
                     target_pos[i] = current_pos[i];
