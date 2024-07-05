@@ -32,20 +32,35 @@ python replay_data.py --task_name pick_little_bear --episode_idx 0
 ```
 * read the data from observation (optional) and action topics and plot it
 
-# Replay data for simulation
-```
-python replay_data.py --simulation --frame_rate 3 --task_name pick_little_bear --episode_idx 0
-```
 
 # Training
 NOTE: Check task name!!! Otherwise, the previous trained model maybe overwritten.
 ```
-python act/train.py --task_name slide_ziploc --batch_size 8 --num_epochs 6000 --num_episodes 50 --lr 1e-5
+python act/train.py --task_name transfer_cube --batch_size 8 --num_epochs 10 --num_episodes 5 --lr 1e-5
 ```
 
 # Inference
 ```
 python act/inference.py --task_name transfer_cube --temporal_agg
+```
+
+# Simulation
+In the first terminal:
+```
+roscore
+```
+In the second terminal:
+```
+conda activate aloha
+python ~/Documents/aloha_sim_ws/src/mobile_aloha_sim/aloha_mujoco/aloha/scripts/aloha_ctrl.py
+```
+Annotate the initial pose preparation. In the third terminal:
+```
+python act/inference.py --task_name transfer_cube --temporal_agg
+```
+In the fourth terminal:
+```
+python replay_data.py --simulation --frame_rate 30 --task_name transfer_cube --episode_idx 60
 ```
 
 # ACT Tuning Tips

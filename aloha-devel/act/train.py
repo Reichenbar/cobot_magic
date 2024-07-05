@@ -118,10 +118,10 @@ def train(args):
     best_ckpt_info = train_process(train_dataloader, val_dataloader, config, stats)
     best_epoch, min_val_loss, best_state_dict = best_ckpt_info
 
-    # save best checkpoint
-    ckpt_path = os.path.join(config['ckpt_dir'], args.ckpt_name)
-    torch.save(best_state_dict, ckpt_path)
-    print(f'Best ckpt, val loss {min_val_loss:.6f} @ epoch{best_epoch}')
+    # # save best checkpoint
+    # ckpt_path = os.path.join(config['ckpt_dir'], args.ckpt_name)
+    # torch.save(best_state_dict, ckpt_path)
+    # print(f'Best ckpt, val loss {min_val_loss:.6f} @ epoch{best_epoch}')
 
 
 def make_policy(policy_class, policy_config, pretrain_ckpt_dir):
@@ -191,7 +191,7 @@ def train_process(train_dataloader, val_dataloader, config, stats):
     validation_history = []
     min_val_loss = np.inf
     best_ckpt_info = None
-    for epoch in tqdm(range(num_epochs)):
+    for epoch in tqdm(range(num_epochs), ncols=100, colour='green'):
         print(f'\nEpoch {epoch}')
         # validation
         with torch.inference_mode():
@@ -243,9 +243,9 @@ def train_process(train_dataloader, val_dataloader, config, stats):
     torch.save(policy.serialize(), ckpt_path)
 
     best_epoch, min_val_loss, best_state_dict = best_ckpt_info
-    ckpt_path = os.path.join(ckpt_dir, f'policy_epoch_{best_epoch}_seed_{seed}.ckpt')
+    ckpt_path = os.path.join(ckpt_dir, f'policy_best_epoch_{best_epoch}_seed_{seed}.ckpt')
     torch.save(best_state_dict, ckpt_path)
-    print(f'Training finished:\nSeed {seed}, val loss {min_val_loss:.6f} at epoch {best_epoch}')
+    print(f'Training finished:\nSeed {seed}, Best ckpt, val loss {min_val_loss:.6f} @ epoch{best_epoch}')
 
     # save training curves
     plot_history(train_history, validation_history, num_epochs, ckpt_dir, seed)
@@ -279,7 +279,7 @@ def get_arguments():
     parser.add_argument('--pretrain_ckpt', action='store', type=str, help='pretrain_ckpt', default='', required=False)
     parser.add_argument('--task_name', action='store', type=str, help='task_name', required=True)
     
-    parser.add_argument('--ckpt_name', action='store', type=str, help='ckpt_name', default='policy_best.ckpt', required=False)
+    parser.add_argument('--ckpt_name', action='store', type=str, help='ckpt_name', default='policy_best_epoch_*_seed_*.ckpt', required=False)
     parser.add_argument('--ckpt_stats_name', action='store', type=str, help='ckpt_stats_name', default='dataset_stats.pkl', required=False)
     parser.add_argument('--policy_class', action='store', type=str, help='policy_class, capitalize, CNNMLP, ACT, Diffusion', default='ACT', required=False)
     parser.add_argument('--batch_size', action='store', type=int, help='batch_size', default=32, required=False)

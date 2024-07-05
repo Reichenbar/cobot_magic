@@ -26,7 +26,7 @@ from cv_bridge import CvBridge
 import time
 import threading
 import math
-import threading
+import glob
 
 
 import sys
@@ -269,7 +269,13 @@ def model_inference(args, config, ros_operator, save_episode=True):
     
     # 2 加载模型权重
     ckpt_path = os.path.join(config['ckpt_dir'], config['ckpt_name'])
-    state_dict = torch.load(ckpt_path)
+    ckpt_files = glob.glob(ckpt_path)
+    if len(ckpt_files) != 1:
+        print(len(ckpt_files))
+        raise FileNotFoundError(f"There should be exactly one ckpt file with the pattern {config['ckpt_name']}.")
+    best_ckpt_file = ckpt_files[0]
+
+    state_dict = torch.load(best_ckpt_file)
     new_state_dict = {}
     for key, value in state_dict.items():
         if key in ["model.is_pad_head.weight", "model.is_pad_head.bias"]:
@@ -692,7 +698,7 @@ def get_arguments():
     parser.add_argument('--ckpt_dir', action='store', type=str, help='ckpt_dir', default='./model', required=False)
     parser.add_argument('--task_name', action='store', type=str, help='task_name', required=True)
     parser.add_argument('--max_publish_step', action='store', type=int, help='max_publish_step', default=10000, required=False)
-    parser.add_argument('--ckpt_name', action='store', type=str, help='ckpt_name', default='policy_best.ckpt', required=False)
+    parser.add_argument('--ckpt_name', action='store', type=str, help='ckpt_name', default='policy_best_epoch_*_seed_*.ckpt', required=False)
     parser.add_argument('--ckpt_stats_name', action='store', type=str, help='ckpt_stats_name', default='dataset_stats.pkl', required=False)
     parser.add_argument('--policy_class', action='store', type=str, help='policy_class, capitalize', default='ACT', required=False)
     parser.add_argument('--batch_size', action='store', type=int, help='batch_size', default=8, required=False)
