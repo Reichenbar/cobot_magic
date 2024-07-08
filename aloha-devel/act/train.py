@@ -6,11 +6,11 @@ import argparse
 import matplotlib.pyplot as plt
 from copy import deepcopy
 from tqdm import tqdm
-
+import datetime
 from utils import load_data 
 from utils import compute_dict_mean, set_seed, detach_dict
 from policy import ACTPolicy, CNNMLPPolicy, DiffusionPolicy
-
+import json
 import sys
 sys.path.append("./")
 
@@ -56,7 +56,7 @@ def train(args):
                          'nheads': args.nheads,
                          'dropout': args.dropout,
                          'pre_norm': args.pre_norm
-                         }
+                         }  
     elif args.policy_class == 'CNNMLP':
         policy_config = {'lr': args.lr,
                          'lr_backbone': args.lr_backbone,
@@ -70,7 +70,9 @@ def train(args):
                          'camera_names': camera_names,
                          'use_depth_image': args.use_depth_image,
                          'use_robot_base': args.use_robot_base,
-                         'hidden_dim': args.hidden_dim
+                         'hidden_dim': args.hidden_dim,
+                         'kl_weight': None,
+                         'dim_feedforward': None
                          }
     elif args.policy_class == 'Diffusion':
         policy_config = {'lr': args.lr,
@@ -89,19 +91,44 @@ def train(args):
                          'action_horizon': args.action_horizon,
                          'num_inference_timesteps': args.num_inference_timesteps,
                          'ema_power': args.ema_power,
-                         'hidden_dim': args.hidden_dim
+                         'hidden_dim': args.hidden_dim,
+                         'kl_weight': None,
+                         'dim_feedforward': None
                          }
     else:
         raise NotImplementedError
-
+    
+    current_time = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+    
     config = {
         'num_epochs': args.num_epochs,
-        'ckpt_dir': os.path.join(args.ckpt_dir, args.task_name),
+        'ckpt_dir': os.path.join(args.ckpt_dir, args.task_name+"_"+current_time),
         'policy_class': args.policy_class,
         'policy_config': policy_config,
         'seed': args.seed,
         'pretrain_ckpt_dir': args.pretrain_ckpt,
     }
+
+    param_record = {"policy_class": args.policy_class,
+                    "batch_size": args.batch_size, 
+                    "lr": args.lr, 
+                    "chunk_size": args.chunk_size, 
+                    "num_epochs": args.num_epochs, 
+                    "num_episodes": num_episodes,
+                    "kl_weight": args.kl_weight,
+                    "hidden_dim": args.hidden_dim,
+                    "dim_feedforward": args.dim_feedforward,
+                    "seed": args.seed
+                    }
+    param_file = os.path.join(args.ckpt_dir, args.task_name+".json")
+    if not os.path.exists(param_file):
+        with open(param_file, 'w') as f:
+            json.dump({}, f)
+    with open(param_file, 'r') as f:
+        records = json.load(f)
+    records[args.task_name+"_"+current_time] = param_record
+    with open(param_file, 'w') as f:
+        json.dump(records, f, indent=4)
 
     # data Preprocess
     train_dataloader, val_dataloader, stats, _ = load_data(dataset_dir, num_episodes, args.arm_delay_time,
