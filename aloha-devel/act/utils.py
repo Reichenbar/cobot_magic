@@ -8,6 +8,10 @@ import IPython
 e = IPython.embed
 import cv2
 
+import json
+import pandas as pd
+from openpyxl.utils import get_column_letter
+
 class EpisodicDataset(torch.utils.data.Dataset):
     def __init__(self, episode_ids, dataset_dir, camera_names, norm_stats, arm_delay_time,
                  use_depth_image, use_robot_base):
@@ -259,3 +263,39 @@ def detach_dict(d):
 def set_seed(seed):
     torch.manual_seed(seed)
     np.random.seed(seed)
+
+def store_params(args, ckpt_folder_name):
+    param_record = {"policy_class": args.policy_class,
+                "batch_size": args.batch_size, 
+                "lr": args.lr, 
+                "chunk_size": args.chunk_size, 
+                "num_epochs": args.num_epochs, 
+                "num_episodes": args.num_episodes,
+                "kl_weight": args.kl_weight,
+                "hidden_dim": args.hidden_dim,
+                "dim_feedforward": args.dim_feedforward,
+                "seed": args.seed
+                }
+    # store important parameters into .json file
+    param_file = os.path.join(args.ckpt_dir, args.task_name+".json")
+    if not os.path.exists(param_file):
+        with open(param_file, 'w') as f:
+            json.dump({}, f)
+    with open(param_file, 'r') as f:
+        records = json.load(f)
+    records[ckpt_folder_name] = param_record
+    with open(param_file, 'w') as f:
+        json.dump(records, f, indent=4)
+    # visualize stored parameters in .xlsx file
+    param_table = os.path.join(args.ckpt_dir, args.task_name+".xlsx")
+    with pd.ExcelWriter(param_table, engine='openpyxl') as writer:
+        df = pd.DataFrame.from_dict(records, orient='index')
+        df.to_excel(writer, index=False) 
+
+        workbook = writer.book
+        worksheet = writer.sheets['Sheet1']
+
+        # adjust column width
+        for column_cells in worksheet.columns:
+            length = 1.5*max(len(str(cell.value)) if cell.value is not None else "" for cell in column_cells)
+            worksheet.column_dimensions[get_column_letter(column_cells[0].column)].width = length

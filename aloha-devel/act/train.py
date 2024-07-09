@@ -8,10 +8,10 @@ from copy import deepcopy
 from tqdm import tqdm
 import datetime
 from utils import load_data 
-from utils import compute_dict_mean, set_seed, detach_dict
+from utils import compute_dict_mean, set_seed, detach_dict, store_params
 from policy import ACTPolicy, CNNMLPPolicy, DiffusionPolicy
-import json
 import sys
+
 sys.path.append("./")
 
 
@@ -99,36 +99,21 @@ def train(args):
         raise NotImplementedError
     
     current_time = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-    
+    ckpt_folder_name = args.task_name+"_"+current_time
+    ckpt_dir = os.path.join(args.ckpt_dir, ckpt_folder_name)
+    if not os.path.isdir(ckpt_dir):
+        os.makedirs(ckpt_dir)
+
     config = {
         'num_epochs': args.num_epochs,
-        'ckpt_dir': os.path.join(args.ckpt_dir, args.task_name+"_"+current_time),
+        'ckpt_dir': ckpt_dir,
         'policy_class': args.policy_class,
         'policy_config': policy_config,
         'seed': args.seed,
         'pretrain_ckpt_dir': args.pretrain_ckpt,
     }
-
-    param_record = {"policy_class": args.policy_class,
-                    "batch_size": args.batch_size, 
-                    "lr": args.lr, 
-                    "chunk_size": args.chunk_size, 
-                    "num_epochs": args.num_epochs, 
-                    "num_episodes": num_episodes,
-                    "kl_weight": args.kl_weight,
-                    "hidden_dim": args.hidden_dim,
-                    "dim_feedforward": args.dim_feedforward,
-                    "seed": args.seed
-                    }
-    param_file = os.path.join(args.ckpt_dir, args.task_name+".json")
-    if not os.path.exists(param_file):
-        with open(param_file, 'w') as f:
-            json.dump({}, f)
-    with open(param_file, 'r') as f:
-        records = json.load(f)
-    records[args.task_name+"_"+current_time] = param_record
-    with open(param_file, 'w') as f:
-        json.dump(records, f, indent=4)
+    # store important training parameters
+    store_params(args, ckpt_folder_name)
 
     # data Preprocess
     train_dataloader, val_dataloader, stats, _ = load_data(dataset_dir, num_episodes, args.arm_delay_time,
@@ -136,8 +121,6 @@ def train(args):
                                                            args.batch_size, args.batch_size)
 
     # save dataset stats
-    if not os.path.isdir(config['ckpt_dir']):
-        os.makedirs(config['ckpt_dir'])
     stats_path = os.path.join(config['ckpt_dir'], args.ckpt_stats_name)
     with open(stats_path, 'wb') as f:
         pickle.dump(stats, f)
@@ -263,11 +246,11 @@ def train_process(train_dataloader, val_dataloader, config, stats):
 
         if epoch % 100 == 0:
             ckpt_path = os.path.join(ckpt_dir, f'policy_epoch_{epoch}_seed_{seed}.ckpt')
-            torch.save(policy.serialize(), ckpt_path)
+            # torch.save(policy.serialize(), ckpt_path)
             plot_history(train_history, validation_history, epoch, ckpt_dir, seed)
 
     ckpt_path = os.path.join(ckpt_dir, f'policy_last.ckpt')
-    torch.save(policy.serialize(), ckpt_path)
+    # torch.save(policy.serialize(), ckpt_path)
 
     best_epoch, min_val_loss, best_state_dict = best_ckpt_info
     ckpt_path = os.path.join(ckpt_dir, f'policy_best_epoch_{best_epoch}_seed_{seed}.ckpt')

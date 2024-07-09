@@ -324,7 +324,7 @@ def model_inference(args, config, ros_operator, save_episode=True):
             t = 0
             max_t = 0
             rate = rospy.Rate(args.publish_rate)
-            if config['temporal_agg']:
+            if config['temporal_agg']: # in original ACT, num_quries is just chunk_size
                 all_time_actions = np.zeros([max_publish_step, max_publish_step + chunk_size, config['state_dim']])
             while t < max_publish_step and not rospy.is_shutdown():
                 # start_time = time.time()

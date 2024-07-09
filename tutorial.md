@@ -41,7 +41,7 @@ python act/train.py --task_name transfer_cube --batch_size 8 --num_epochs 10 --n
 
 # Inference
 ```
-python act/inference.py --task_name transfer_cube --temporal_agg
+python act/inference.py --task_name slide_ziploc_2024_07_09_12_42_51 --temporal_agg --chunk_size 96
 ```
 
 # Simulation
