@@ -28,11 +28,6 @@ class EpisodicDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return len(self.episode_ids)
-# start_ts = 4
-# 4
-# 3 4 5 6
-
-# 5 6 6
 
     def __getitem__(self, index):
         """
@@ -290,12 +285,12 @@ def store_params(args, ckpt_folder_name):
     param_table = os.path.join(args.ckpt_dir, args.task_name+".xlsx")
     with pd.ExcelWriter(param_table, engine='openpyxl') as writer:
         df = pd.DataFrame.from_dict(records, orient='index')
-        df.to_excel(writer, index=False) 
+        df.to_excel(writer)
 
         workbook = writer.book
         worksheet = writer.sheets['Sheet1']
 
         # adjust column width
         for column_cells in worksheet.columns:
-            length = 1.5*max(len(str(cell.value)) if cell.value is not None else "" for cell in column_cells)
+            length = 1.5*max(len(str(cell.value)) if cell.value is not None else 0 for cell in column_cells)
             worksheet.column_dimensions[get_column_letter(column_cells[0].column)].width = length
