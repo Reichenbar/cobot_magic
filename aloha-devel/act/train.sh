@@ -1,16 +1,25 @@
-num_epochs=600
-batch_size=48
-num_episodes=50
-dataset_dir=/media/lin/T7/data0314/
-train_dir=$HOME/train0315
-pretrain_ckpt=~/train0312/policy_best.ckpt
-ws_path=$(pwd)
+cd ~/Documents/cobot_magic/aloha-devel
+# conda activate aloha
 
-# echo "$pretrain_ckpt"
-# echo "$train_dir"
-# echo $(pwd)
+# python act/train.py --task_name slide_ziploc --batch_size 8 --lr 1e-5 --chunk_size 16 --num_epochs 8000 --num_episodes 50 --kl_weight 10 # 2:20
+# python act/train.py --task_name slide_ziploc --batch_size 8 --lr 1e-5 --chunk_size 32 --num_epochs 8000 --num_episodes 50 --kl_weight 10
+# python act/train.py --task_name slide_ziploc --batch_size 8 --lr 1e-5 --chunk_size 48 --num_epochs 8000 --num_episodes 50 --kl_weight 10
+# python act/train.py --task_name slide_ziploc --batch_size 8 --lr 1e-5 --chunk_size 64 --num_epochs 8000 --num_episodes 50 --kl_weight 10
+# python act/train.py --task_name slide_ziploc --batch_size 8 --lr 1e-5 --chunk_size 80 --num_epochs 8000 --num_episodes 50 --kl_weight 10
+# python act/train.py --task_name slide_ziploc --batch_size 8 --lr 1e-5 --chunk_size 8 --num_epochs 8000 --num_episodes 50 --kl_weight 10
+# python act/train.py --task_name slide_ziploc --batch_size 8 --lr 1e-5 --chunk_size 96 --num_epochs 8000 --num_episodes 50 --kl_weight 10
+# python act/train.py --task_name slide_ziploc --batch_size 8 --lr 1e-5 --chunk_size 40 --num_epochs 8000 --num_episodes 50 --kl_weight 10
+# python act/train.py --task_name slide_ziploc --batch_size 8 --lr 1e-5 --chunk_size 56 --num_epochs 8000 --num_episodes 50 --kl_weight 10
+# python act/train.py --task_name slide_ziploc --batch_size 16 --lr 2e-5 --chunk_size 32 --num_epochs 8000 --num_episodes 50 --kl_weight 10
+# python act/train.py --task_name slide_ziploc --batch_size 16 --lr 2e-5 --chunk_size 48 --num_epochs 8000 --num_episodes 50 --kl_weight 10
+# python act/train.py --task_name slide_ziploc --batch_size 8 --lr 1e-5 --chunk_size 48 --num_epochs 8000 --num_episodes 50 --kl_weight 100
 
-cd $ws_path
+# python act/train.py --task_name transfer_cube --batch_size 8 --lr 1e-5 --chunk_size 48 --num_epochs 8000 --num_episodes 90 --kl_weight 10 # 3:50
 
-python act/train.py --dataset_dir $dataset_dir --ckpt_dir $train_dir --num_episodes $num_episodes --pretrain_ckpt $pretrain_ckpt --batch_size $batch_size  --num_epochs $num_epochs
-# python act/train.py --dataset /media/lin/T7/data0314/ --ckpt_dir $train_dir/no_pretrain --batch_size $batch_size --num_epochs $num_epochs --num_episodes $num_episodes
+# python act/train.py --task_name move_ziploc --batch_size 8 --lr 1e-5 --chunk_size 48 --num_epochs 8000 --num_episodes 50 --kl_weight 10 # 2:15
+# python act/train.py --task_name move_ziploc --batch_size 8 --lr 1e-5 --chunk_size 48 --num_epochs 8000 --num_episodes 50 --kl_weight 100
+
+# python act/train.py --task_name pick_bolt --batch_size 8 --lr 1e-5 --chunk_size 48 --num_epochs 8000 --num_episodes 50 --kl_weight 10 # 2:15
+# python act/train.py --task_name pick_bolt --batch_size 8 --lr 1e-5 --chunk_size 48 --num_epochs 8000 --num_episodes 50 --kl_weight 100
+
+python act/train.py --task_name pick_long_bolt --batch_size 8 --lr 1e-5 --chunk_size 48 --num_epochs 8000 --num_episodes 50 --kl_weight 10 #

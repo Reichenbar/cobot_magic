@@ -332,6 +332,7 @@ def model_inference(args, config, ros_operator, save_episode=True):
                 if config['policy_class'] == "ACT":
                     if t >= max_t:
                         pre_action = action
+                        print(f"time step: {t}")
                         inference_thread = threading.Thread(target=inference_process,
                                                             args=(args, config, ros_operator,
                                                                   policy, stats, t, pre_action))
@@ -365,8 +366,10 @@ def model_inference(args, config, ros_operator, save_episode=True):
                 action = post_process(raw_action[0])
                 left_action = action[:7]  # 取7维度
                 right_action = action[7:14]
-                ros_operator.puppet_arm_publish(left_action, right_action)  # puppet_arm_publish_continuous_thread
-                # ros_operator.puppet_arm_publish_continuous(left_action, right_action)  # puppet_arm_publish_continuous_thread
+                if t < 2: # avoid sudden joint angle change at start
+                    ros_operator.puppet_arm_publish_continuous(left_action, right_action)  # puppet_arm_publish_continuous_thread
+                else:
+                    ros_operator.puppet_arm_publish(left_action, right_action)  # puppet_arm_publish_continuous_thread
                 # ros_operator.puppet_arm_publish_linear(left_action, right_action)  # puppet_arm_publish_continuous_thread
                 if args.use_robot_base:
                     vel_action = action[14:16]
@@ -378,6 +381,7 @@ def model_inference(args, config, ros_operator, save_episode=True):
                 # print("left_action:", left_action)
                 # print("right_action:", right_action)
                 rate.sleep()
+            # break # repeated task execution
 
 
 class RosOperator:
@@ -445,7 +449,7 @@ class RosOperator:
         """
         Limit the joint change with in the range of args.arm_steps_length
         """
-        rate = rospy.Rate(self.args.publish_rate)
+        rate = rospy.Rate(3*self.args.publish_rate) # larger publish_rate for interpolation
         left_arm = None
         right_arm = None
         while True and not rospy.is_shutdown():
@@ -763,7 +767,7 @@ def get_arguments():
     parser.add_argument('--chunk_size', action='store', type=int, help='chunk_size',
                         default=32, required=False)
     parser.add_argument('--arm_steps_length', action='store', type=float, help='arm_steps_length',
-                        default=[0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.2], required=False)
+                        default=[0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.2], required=False)
 
     parser.add_argument('--use_actions_interpolation', action='store', type=bool, help='use_actions_interpolation',
                         default=False, required=False)
@@ -788,4 +792,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-# python act/inference.py --ckpt_dir ~/train0314/

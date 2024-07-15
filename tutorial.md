@@ -1,6 +1,6 @@
 # Collect data
 ```
-python collect_data.py --task_name slide_ziploc --max_timesteps 750 --episode_idx 0
+python collect_data.py --task_name open_cup --max_timesteps 700 --episode_idx 0
 ```
 
 * Observation topic: `/puppet/joint_left` and `/puppet/joint_right`
@@ -41,7 +41,7 @@ python act/train.py --task_name transfer_cube --batch_size 8 --num_epochs 10 --n
 
 # Inference
 ```
-python act/inference.py --task_name slide_ziploc_2024_07_09_12_42_51 --temporal_agg --chunk_size 96
+python act/inference.py --task_name transfer_cube_2024_07_10_16_39_49 --temporal_agg --chunk_size 48 --kl_weight 10
 ```
 
 # Simulation
