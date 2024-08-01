@@ -40,9 +40,8 @@ def save_data(args, timesteps, actions, dataset_path):
     # len(action): max_timesteps, len(time_steps): max_timesteps + 1
     # 动作长度 遍历动作
     while actions:
-        # 循环弹出一个队列
         action = actions.pop(0)   # 动作  当前动作
-        ts = timesteps.pop(0)     # 奖励  前一帧
+        ts = timesteps.pop(0)     # observation  前一帧
 
         # 往字典里面添值
         # Timestep返回的qpos，qvel,effort

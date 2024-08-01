@@ -7,6 +7,7 @@ camera_ws/build
 camera_ws/devel
 
 collect_data/data
+collect_data/compressed_data
 
 remote_control/follow1/build
 remote_control/follow1/devel
@@ -16,3 +17,14 @@ remote_control/master1/build
 remote_control/master1/devel
 remote_control/master2/build
 remote_control/master2/devel
+
+remote_control_v2/follow1/build
+remote_control_v2/follow1/devel
+remote_control_v2/follow2/build
+remote_control_v2/follow2/devel
+remote_control_v2/master1/build
+remote_control_v2/master1/devel
+remote_control_v2/master2/build
+remote_control_v2/master2/devel
+
+remote_control_pose_ctrl

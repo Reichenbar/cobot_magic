@@ -315,7 +315,7 @@ def model_inference(args, config, ros_operator, save_episode=True):
     ros_operator.puppet_arm_publish_continuous(left0, right0)
     time.sleep(0.5)
     ros_operator.puppet_arm_publish_continuous(left1, right1)
-    input("Enter any key to begin the inference process.")
+    # input("Enter any key to begin the inference process.")
     action = None
     # 推理
     with torch.inference_mode():
@@ -381,7 +381,7 @@ def model_inference(args, config, ros_operator, save_episode=True):
                 # print("left_action:", left_action)
                 # print("right_action:", right_action)
                 rate.sleep()
-            # break # repeated task execution
+            break # repeated task execution
 
 
 class RosOperator:
@@ -464,6 +464,7 @@ class RosOperator:
                 continue
             else:
                 break
+        print(f"right: {right[1]}, right_arm: {right_arm[1]}")
         left_symbol = [1 if left[i] - left_arm[i] > 0 else -1 for i in range(len(left))]
         right_symbol = [1 if right[i] - right_arm[i] > 0 else -1 for i in range(len(right))]
         flag = True
@@ -495,7 +496,7 @@ class RosOperator:
             joint_state_msg.position = right_arm
             self.puppet_arm_right_publisher.publish(joint_state_msg)
             step += 1
-            print("puppet_arm_publish_continuous:", step)
+            print(f"puppet_arm_publish_continuous: {step}, right: {right[1]}, right_arm: {right_arm[1]}")
             rate.sleep()
 
     def puppet_arm_publish_linear(self, left, right):
