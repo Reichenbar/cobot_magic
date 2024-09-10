@@ -2,7 +2,6 @@
 import os
 import numpy as np
 import cv2
-import h5py
 import argparse
 import rospy
 
@@ -13,45 +12,7 @@ from geometry_msgs.msg import Twist
 
 import sys
 sys.path.append("./")
-def load_hdf5(dataset_dir, dataset_name):
-    dataset_path = os.path.join(dataset_dir, dataset_name + '.hdf5')
-    if not os.path.isfile(dataset_path):
-        print(f'Dataset does not exist at \n{dataset_path}\n')
-        exit()
-
-    with h5py.File(dataset_path, 'r') as root:
-        is_sim = root.attrs['sim']
-        compressed = root.attrs.get('compress', False)
-        qpos = root['/observations/qpos'][()]
-        qvel = root['/observations/qvel'][()]
-        if 'effort' in root.keys():
-            effort = root['/observations/effort'][()]
-        else:
-            effort = None
-        action = root['/action'][()]
-        base_action = root['/base_action'][()]
-        
-        image_dict = dict()
-        for cam_name in root[f'/observations/images/'].keys():
-            image_dict[cam_name] = root[f'/observations/images/{cam_name}'][()]
-        
-        if compressed:
-            compress_len = root['/compress_len'][()]
-
-    if compressed:
-        for cam_id, cam_name in enumerate(image_dict.keys()):
-            # un-pad and uncompress
-            padded_compressed_image_list = image_dict[cam_name]
-            image_list = []
-            for frame_id, padded_compressed_image in enumerate(padded_compressed_image_list): # [:1000] to save memory
-                image_len = int(compress_len[cam_id, frame_id])
-                
-                compressed_image = padded_compressed_image
-                image = cv2.imdecode(compressed_image, 1)
-                image_list.append(image)
-            image_dict[cam_name] = image_list
-
-    return qpos, qvel, effort, action, base_action, image_dict
+from visualize_episodes import load_hdf5
 
 def main(args):
     rospy.init_node("replay_node")
@@ -80,42 +41,24 @@ def main(args):
     
     joint_state_msg = JointState()
     joint_state_msg.header =  Header()
-    joint_state_msg.name = ['joint0', 'joint1', 'joint2', 'joint3', 'joint4', 'joint5', 'joint6']  # 设置关节名称
+    joint_state_msg.name = ['joint0', 'joint1', 'joint2', 'joint3', 'joint4', 'joint5', 'joint6']
     twist_msg = Twist()
 
     rate = rospy.Rate(args.frame_rate)
     
-    qposs, qvels, efforts, actions, base_actions, image_dicts = load_hdf5(os.path.join(dataset_dir, task_name), dataset_name)
-    
-    
+    qpos, qvels, efforts, actions, base_actions, image_dicts = load_hdf5(os.path.join(dataset_dir, task_name), dataset_name)
+
     if args.only_pub_master:
-        last_action = [-0.0057,-0.031, -0.0122, -0.032, 0.0099, 0.0179, 0.2279, 0.0616, 0.0021, 0.0475, -0.1013, 0.1097, 0.0872, 0.2279]
-        rate = rospy.Rate(100)
-        for action in actions:
-            if(rospy.is_shutdown()):
-                    break
-            
-            new_actions = np.linspace(last_action, action, 20) # 插值
-            last_action = action
-            for act in new_actions:
-                print("master arm action", "left: ", np.round(act[:7], 4), " right: ", np.round(act[7:], 4))
-                cur_timestamp = rospy.Time.now()  # 设置时间戳
-                joint_state_msg.header.stamp = cur_timestamp 
-                
-                joint_state_msg.position = act[:7]
-                master_arm_left_publisher.publish(joint_state_msg)
-
-                joint_state_msg.position = act[7:]
-                master_arm_right_publisher.publish(joint_state_msg)   
-
-                if(rospy.is_shutdown()):
-                    break
-                rate.sleep() 
+        replay_master_action(actions, master_arm_left_publisher, master_arm_right_publisher, rate)
+        # replay_master_action_interpolation(actions, master_arm_left_publisher, master_arm_right_publisher)
     
     else:
         i = 0
+        joint_state_msg = JointState()
+        joint_state_msg.header =  Header()
+        joint_state_msg.name = ['joint0', 'joint1', 'joint2', 'joint3', 'joint4', 'joint5', 'joint6']
         while(not rospy.is_shutdown() and i < len(actions)):
-            print("puppet arm state", "left: ", np.round(qposs[i][:7], 4), " right: ", np.round(qposs[i][7:], 4))
+            print("puppet arm state", "left: ", np.round(qpos[i][:7], 4), " right: ", np.round(qpos[i][7:], 4))
             
             cam_names = [k for k in image_dicts.keys()]
             image0 = image_dicts[cam_names[0]][i] 
@@ -124,7 +67,7 @@ def main(args):
             image1 = image_dicts[cam_names[1]][i] 
             image1 = image1[:, :, [2, 1, 0]]  # swap B and R channel
             
-            image2 = image_dicts[cam_names[2]][i] 
+            image2 = image_dicts[cam_names[2]][i] # RGB
             image2 = image2[:, :, [2, 1, 0]]  # swap B and R channel
 
             cur_timestamp = rospy.Time.now()  # 设置时间戳
@@ -138,10 +81,10 @@ def main(args):
                 joint_state_msg.position = actions[i][7:]
                 master_arm_right_publisher.publish(joint_state_msg)
 
-            joint_state_msg.position = qposs[i][:7]
+            joint_state_msg.position = qpos[i][:7]
             puppet_arm_left_publisher.publish(joint_state_msg)
 
-            joint_state_msg.position = qposs[i][7:]
+            joint_state_msg.position = qpos[i][7:]
             puppet_arm_right_publisher.publish(joint_state_msg)
 
             img_front_publisher.publish(bridge.cv2_to_imgmsg(image0, "bgr8"))
@@ -157,6 +100,51 @@ def main(args):
             rate.sleep() 
             
 
+def replay_master_action_interpolation(actions, master_arm_left_publisher, master_arm_right_publisher):
+    last_action = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    joint_state_msg = JointState()
+    joint_state_msg.header =  Header()
+    joint_state_msg.name = ['joint0', 'joint1', 'joint2', 'joint3', 'joint4', 'joint5', 'joint6']
+    rate = rospy.Rate(100)
+    for action in actions:
+        if(rospy.is_shutdown()):
+            break
+        new_actions = np.linspace(last_action, action, 20)
+        last_action = action
+        for act in new_actions:
+            print("master arm action", "left: ", np.round(act[:7], 4), " right: ", np.round(act[7:], 4))
+            cur_timestamp = rospy.Time.now()
+            joint_state_msg.header.stamp = cur_timestamp 
+            
+            joint_state_msg.position = act[:7]
+            master_arm_left_publisher.publish(joint_state_msg)
+
+            joint_state_msg.position = act[7:]
+            master_arm_right_publisher.publish(joint_state_msg)   
+
+            if(rospy.is_shutdown()):
+                break
+            rate.sleep()
+
+def replay_master_action(actions, master_arm_left_publisher, master_arm_right_publisher, rate):
+    i = 0
+    joint_state_msg = JointState()
+    joint_state_msg.header =  Header()
+    joint_state_msg.name = ['joint0', 'joint1', 'joint2', 'joint3', 'joint4', 'joint5', 'joint6']
+    while(not rospy.is_shutdown() and i < len(actions)):
+        action = actions[i]
+        print("master arm action", "left: ", np.round(action[:7], 4), " right: ", np.round(action[7:], 4))
+        cur_timestamp = rospy.Time.now()
+        joint_state_msg.header.stamp = cur_timestamp 
+        
+        joint_state_msg.position = action[:7]
+        master_arm_left_publisher.publish(joint_state_msg)
+
+        joint_state_msg.position = action[7:]
+        master_arm_right_publisher.publish(joint_state_msg)   
+
+        i += 1
+        rate.sleep()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

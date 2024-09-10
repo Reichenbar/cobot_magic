@@ -698,7 +698,7 @@ class RosOperator:
         self.robot_base_publisher = rospy.Publisher(self.args.robot_base_cmd_topic, Twist, queue_size=10)
 
 
-def get_arguments():
+def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--ckpt_dir', action='store', type=str, help='ckpt_dir', default='./model', required=False)
     parser.add_argument('--task_name', action='store', type=str, help='task_name', required=True)
@@ -780,12 +780,11 @@ def get_arguments():
     parser.add_argument('--action_horizon', action='store', type=int, help='action_horizon', default=8, required=False)
     parser.add_argument('--num_inference_timesteps', action='store', type=int, help='num_inference_timesteps', default=10, required=False)
     parser.add_argument('--ema_power', action='store', type=int, help='ema_power', default=0.75, required=False)
-    args = parser.parse_args()
-    return args
+    return parser
 
 
 def main():
-    args = get_arguments()
+    args = get_parser().parse_args()
     ros_operator = RosOperator(args)
     config = get_model_config(args)
     model_inference(args, config, ros_operator, save_episode=True)

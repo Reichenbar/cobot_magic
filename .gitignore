@@ -26,3 +26,8 @@ remote_control_joint_ctrl/master1/build
 remote_control_joint_ctrl/master1/devel
 remote_control_joint_ctrl/master2/build
 remote_control_joint_ctrl/master2/devel
+
+test_accuracy
+collect_data/data_sl
+collect_data/convert_sl.py
+collect_data/aloha_data_compress.py
