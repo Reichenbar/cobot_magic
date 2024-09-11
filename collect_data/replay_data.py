@@ -12,7 +12,7 @@ from geometry_msgs.msg import Twist
 
 import sys
 sys.path.append("./")
-from visualize_episodes import load_hdf5
+from utils import load_hdf5
 
 def main(args):
     rospy.init_node("replay_node")

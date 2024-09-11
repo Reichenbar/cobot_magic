@@ -21,16 +21,27 @@ import cv2
 def save_data(args, timesteps, actions, dataset_path):
     # 数据字典
     data_size = len(actions)
-    data_dict = {
-        # 一个是奖励里面的qpos，qvel， effort ,一个是实际发的acition
-        '/observations/qpos': [],
-        '/observations/qvel': [],
-        '/observations/effort': [],
-        '/action': [],
-        '/base_action': [],
-        # '/base_action_t265': [],
-    }
-
+    if args.compress_image:
+        data_dict = {
+            # 一个是奖励里面的qpos，qvel， effort ,一个是实际发的acition
+            '/observations/qpos': [],
+            '/observations/qvel': [],
+            '/observations/effort': [],
+            '/action': [],
+            '/base_action': [],
+            '/compress_len': [],
+            # '/base_action_t265': [],
+        }
+    else:
+        data_dict = {
+            # 一个是奖励里面的qpos，qvel， effort ,一个是实际发的acition
+            '/observations/qpos': [],
+            '/observations/qvel': [],
+            '/observations/effort': [],
+            '/action': [],
+            '/base_action': [],
+            # '/base_action_t265': [],
+        }
     # 相机字典  观察的图像
     for cam_name in args.camera_names:
         data_dict[f'/observations/images/{cam_name}'] = []
@@ -55,9 +66,20 @@ def save_data(args, timesteps, actions, dataset_path):
 
         # 相机数据
         # data_dict['/base_action_t265'].append(ts.observation['base_vel_t265'])
-        for cam_name in args.camera_names:
-            data_dict[f'/observations/images/{cam_name}'].append(ts.observation['images'][cam_name])
-            if args.use_depth_image:
+        if args.compress_image:
+            cam_compress_len = []
+            for cam_name in args.camera_names:
+                rgb_image = ts.observation['images'][cam_name]
+                com_image = cv2.imencode(".jpg",rgb_image)[1].tobytes()
+                data_dict[f'/observations/images/{cam_name}'].append(com_image)
+                cam_compress_len.append(len(com_image))
+            data_dict['/compress_len'].append(cam_compress_len)
+        else:
+            for cam_name in args.camera_names:
+                data_dict[f'/observations/images/{cam_name}'].append(ts.observation['images'][cam_name])
+        
+        if args.use_depth_image:
+            for cam_name in args.camera_names:
                 data_dict[f'/observations/images_depth/{cam_name}'].append(ts.observation['images_depth'][cam_name])
 
     t0 = time.time()
@@ -67,30 +89,35 @@ def save_data(args, timesteps, actions, dataset_path):
         # 2 图像是否压缩
         #
         root.attrs['sim'] = False
-        root.attrs['compress'] = False
+        root.attrs['compress'] = args.compress_image
 
         # 创建一个新的组observations，观测状态组
         # 图像组
         obs = root.create_group('observations')
         image = obs.create_group('images')
-        for cam_name in args.camera_names:
-            _ = image.create_dataset(cam_name, (data_size, 480, 640, 3), dtype='uint8',
-                                         chunks=(1, 480, 640, 3), )
-        if args.use_depth_image:
-            image_depth = obs.create_group('images_depth')
-            for cam_name in args.camera_names:
-                _ = image_depth.create_dataset(cam_name, (data_size, 480, 640), dtype='uint16',
-                                             chunks=(1, 480, 640), )
 
         _ = obs.create_dataset('qpos', (data_size, 14))
         _ = obs.create_dataset('qvel', (data_size, 14))
         _ = obs.create_dataset('effort', (data_size, 14))
         _ = root.create_dataset('action', (data_size, 14))
         _ = root.create_dataset('base_action', (data_size, 2))
-
+        if args.compress_image:
+            root.create_dataset('compress_len', (data_size, len(args.camera_names)))
+            for cam_name in args.camera_names:
+                # TODO: bad, repeated assignment
+                _ = image.create_dataset(cam_name, data=np.array(data_dict[f'/observations/images/{cam_name}']))
+        else:
+            for cam_name in args.camera_names:
+                _ = image.create_dataset(cam_name, (data_size, 480, 640, 3), dtype='uint8',
+                                        chunks=(1, 480, 640, 3), )
+        if args.use_depth_image:
+            image_depth = obs.create_group('images_depth')
+            for cam_name in args.camera_names:
+                _ = image_depth.create_dataset(cam_name, (data_size, 480, 640), dtype='uint16',
+                                            chunks=(1, 480, 640), )
         # data_dict write into h5py.File
         for name, array in data_dict.items():  
-            root[name][...] = array
+            root[name][...] = array 
     print(f'\033[32m\nSaving: {time.time() - t0:.1f} secs. %s \033[0m\n'%dataset_path) # data saving time
 
 
@@ -424,6 +451,9 @@ def get_arguments():
     parser.add_argument('--use_depth_image', action='store', type=bool, help='use_depth_image',
                         default=False, required=False)
     
+    # copress data
+    parser.add_argument('--compress_image', action='store_true', help='Enable image compression')
+
     parser.add_argument('--frame_rate', action='store', type=int, help='frame_rate',
                         default=30, required=False)
     
@@ -449,5 +479,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-# python collect_data.py --dataset_dir ~/data --max_timesteps 500 --episode_idx 0

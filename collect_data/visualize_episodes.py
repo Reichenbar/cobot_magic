@@ -6,48 +6,13 @@ import h5py
 import argparse
 import matplotlib.pyplot as plt
 
+from utils import load_hdf5
+
 DT = 0.02
 # JOINT_NAMES = ["waist", "shoulder", "elbow", "forearm_roll", "wrist_angle", "wrist_rotate"]
 JOINT_NAMES = ["joint0", "joint1", "joint2", "joint3", "joint4", "joint5"]
 STATE_NAMES = JOINT_NAMES + ["gripper"]
 BASE_STATE_NAMES = ["linear_vel", "angular_vel"]
-
-def load_hdf5(dataset_dir, dataset_name):
-    dataset_path = os.path.join(dataset_dir, dataset_name + '.hdf5')
-    if not os.path.isfile(dataset_path):
-        print(f'Dataset does not exist at \n{dataset_path}\n')
-        exit()
-
-    with h5py.File(dataset_path, 'r') as root:
-        is_sim = root.attrs['sim']
-        compressed = root.attrs.get('compress', False)
-        qpos = root['/observations/qpos'][()]
-        qvel = root['/observations/qvel'][()]
-        if 'effort' in root.keys():
-            effort = root['/observations/effort'][()]
-        else:
-            effort = None
-        action = root['/action'][()]
-        base_action = root['/base_action'][()]
-        image_dict = dict()
-        for cam_name in root[f'/observations/images/'].keys():
-            image_dict[cam_name] = root[f'/observations/images/{cam_name}'][()]
-        if compressed:
-            compress_len = root['/compress_len'][()]
-
-    if compressed:
-        for cam_id, cam_name in enumerate(image_dict.keys()):
-            # un-pad and uncompress
-            padded_compressed_image_list = image_dict[cam_name]
-            image_list = []
-            for frame_id, padded_compressed_image in enumerate(padded_compressed_image_list): # [:1000] to save memory
-                image_len = int(compress_len[cam_id, frame_id])
-                compressed_image = padded_compressed_image
-                image = cv2.imdecode(compressed_image, 1)
-                image_list.append(image)
-            image_dict[cam_name] = image_list
-
-    return qpos, qvel, effort, action, base_action, image_dict
 
 def main(args):
     dataset_dir = os.path.join(args['dataset_dir'], args['task_name'])

@@ -55,7 +55,8 @@ class EpisodicDataset(torch.utils.data.Dataset):
             for cam_name in self.camera_names:
                 if is_compress:
                     decoded_image = root[f'/observations/images/{cam_name}'][start_ts]
-                    image_dict[cam_name] = cv2.imdecode(decoded_image, 1)
+                    # image_dict[cam_name] = cv2.imdecode(decoded_image, 1)
+                    image_dict[cam_name] = cv2.imdecode(np.frombuffer(decoded_image, dtype=np.uint8), cv2.IMREAD_COLOR) # compressed as bytes
                     # print(image_dict[cam_name].shape)
                     # exit(-1)
                 else:
