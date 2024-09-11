@@ -111,6 +111,7 @@ def train(args):
         'policy_config': policy_config,
         'seed': args.seed,
         'pretrain_ckpt_dir': args.pretrain_ckpt,
+        'save_periodic_ckpt': args.save_periodic_ckpt
     }
     # store important training parameters
     store_params(args, ckpt_folder_name)
@@ -191,6 +192,7 @@ def train_process(train_dataloader, val_dataloader, config, stats):
     policy_class = config['policy_class']
     policy_config = config['policy_config']
     pretrain_ckpt_dir = config['pretrain_ckpt_dir']
+    save_periodic_ckpt = config['save_periodic_ckpt']
     set_seed(seed)
 
     policy = make_policy(policy_class, policy_config, pretrain_ckpt_dir)
@@ -245,8 +247,9 @@ def train_process(train_dataloader, val_dataloader, config, stats):
         print(summary_string)
 
         if epoch % 100 == 0:
-            ckpt_path = os.path.join(ckpt_dir, f'policy_epoch_{epoch}_seed_{seed}.ckpt')
-            # torch.save(policy.serialize(), ckpt_path)
+            if save_periodic_ckpt:
+                ckpt_path = os.path.join(ckpt_dir, f'policy_epoch_{epoch}_seed_{seed}.ckpt')
+                torch.save(policy.serialize(), ckpt_path)
             plot_history(train_history, validation_history, epoch, ckpt_dir, seed)
 
     ckpt_path = os.path.join(ckpt_dir, f'policy_last.ckpt')
@@ -314,6 +317,8 @@ def get_arguments():
     parser.add_argument('--nheads', action='store', type=int, help='nheads', default=8, required=False)
     parser.add_argument('--dropout', default=0.1, type=float, help="Dropout applied in the transformer", required=False)
     parser.add_argument('--pre_norm', action='store_true', required=False)
+
+    parser.add_argument('--save_periodic_ckpt', action='store_true', required=False) # save ckpt every 100 epochs
 
     # for ACT
     parser.add_argument('--kl_weight', action='store', type=int, help='KL Weight', default=10, required=False)
